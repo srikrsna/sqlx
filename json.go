@@ -44,13 +44,13 @@ func JSONB(v interface{}) interface {
 	driver.Valuer
 	sql.Scanner
 } {
-	return &json{v}
+	return &jsonb{v}
 }
 
 func (j *jsonb) Scan(src interface{}) error {
 	dat, ok := src.([]byte)
 	if !ok {
-		return fmt.Errorf("sqlx: error while scanning jsonb: expected []byte go %T", src)
+		return fmt.Errorf("sqlx: error while scanning jsonb: expected []byte got %T", src)
 	}
 
 	return ej.Unmarshal(dat, j.v)
