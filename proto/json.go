@@ -27,7 +27,7 @@ func JSONB(v proto.Message) interface {
 func (j *jsonb) Scan(src interface{}) error {
 	dat, ok := src.([]byte)
 	if !ok {
-		return fmt.Errorf("sqlx: error while scanning jsonb: expected []byte got %T", src)
+		return fmt.Errorf("sqlpx: error while scanning jsonb: expected []byte got %T", src)
 	}
 
 	return jsonpb.Unmarshal(bytes.NewReader(dat), j.v)
