@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -13,6 +14,12 @@ import (
 
 type pb struct {
 	proto.Message
+}
+
+var pbPool = sync.Pool{
+	New: func() interface{} {
+		return new(proto.Buffer)
+	},
 }
 
 // Proto is convenient wrapper to auto marshal and unmarshal Proto messages as []byte
@@ -29,12 +36,29 @@ func (p *pb) Scan(src interface{}) error {
 	if !ok {
 		return fmt.Errorf("sqlpx: error while scanning proto: expected []byte go %T", src)
 	}
+	buf := pbPool.Get().(*proto.Buffer)
 
-	return proto.Unmarshal(d, p.Message)
+	buf.SetBuf(d)
+	err := buf.Unmarshal(p.Message)
+	pbPool.Put(buf)
+
+	return err
 }
 
 func (p *pb) Value() (driver.Value, error) {
-	return proto.Marshal(p.Message)
+	buf := pbPool.Get().(*proto.Buffer)
+	buf.Reset()
+	if err := buf.Marshal(p.Message); err != nil {
+		pbPool.Put(buf)
+		return nil, err
+	}
+
+	b := buf.Bytes()
+	dat := make([]byte, len(b))
+	copy(dat, b)
+	pbPool.Put(buf)
+
+	return dat, nil
 }
 
 type pTime struct {

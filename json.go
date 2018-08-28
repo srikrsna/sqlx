@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	ej "encoding/json"
 	"fmt"
+	"strings"
 )
 
 type json struct {
@@ -26,7 +27,7 @@ func (j *json) Scan(src interface{}) error {
 		return fmt.Errorf("sqlx: error while scanning json: expected string go %T", src)
 	}
 
-	return ej.Unmarshal([]byte(dat), j.v)
+	return ej.NewDecoder(strings.NewReader(dat)).Decode(j.v)
 }
 
 func (j *json) Value() (driver.Value, error) {
